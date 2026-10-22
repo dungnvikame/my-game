@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# backup & tool-local
+life-balance-app.bundle
+plans-backup.zip
+.claude/

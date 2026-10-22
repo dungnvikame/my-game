@@ -12,10 +12,22 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Token màu cho chart — 1 accent + grid/text mờ, hoạt động cả 2 theme */
+:root {
+  --chart-accent: #4f46e5;
+  --chart-mood: #0d9488;
+  --chart-grid: rgba(115, 115, 115, 0.25);
+  --chart-text: #737373;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --chart-accent: #818cf8;
+    --chart-mood: #2dd4bf;
+    --chart-grid: rgba(163, 163, 163, 0.35);
+    --chart-text: #a3a3a3;
   }
 }
 

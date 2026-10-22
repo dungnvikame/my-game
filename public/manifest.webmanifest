@@ -1,0 +1,10 @@
+{
+  "name": "Life Balance",
+  "short_name": "Balance",
+  "description": "Dashboard vận hành cho cuộc sống",
+  "start_url": "/checkin",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#171717",
+  "icons": []
+}

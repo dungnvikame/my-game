@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarCheck, ChartPie, ClipboardList } from "lucide-react";
+import { CalendarCheck, ChartPie, ClipboardList, History } from "lucide-react";
 
 const TABS = [
   { href: "/checkin", label: "Hôm nay", Icon: CalendarCheck },
   { href: "/dashboard", label: "Dashboard", Icon: ChartPie },
   { href: "/review", label: "Review", Icon: ClipboardList },
+  { href: "/history", label: "Lịch sử", Icon: History },
 ] as const;
 
 // Bottom nav cố định: chuẩn mobile (icon + label, ≤5 mục), safe-area aware.

@@ -10,10 +10,13 @@ import {
   type DayEntry,
 } from "@/lib/balance/score";
 import { todayDate, ymdLocal } from "@/lib/balance/today";
+import { currentWeekKey, previousWeekKey } from "@/lib/balance/review-week";
+import { computeSuggestions, type InsightWeek } from "@/lib/insight/rules";
 import { AppNav } from "@/components/app-nav";
 import { BalanceWheel } from "@/components/dashboard/balance-wheel";
 import { AreaTrend } from "@/components/dashboard/area-trend";
 import { ReviewBanner } from "@/components/review/review-banner";
+import { InsightPanel, type SuggestionStatus } from "@/components/insight/insight-panel";
 
 export const instant = false; // đọc cookies/session mỗi request, không prerender
 
@@ -29,14 +32,27 @@ export default async function DashboardPage() {
   const last7 = new Date(today);
   last7.setDate(last7.getDate() - 6); // 7 ngày gần nhất tính cả hôm nay
 
-  const [{ data: weightRows }, { data: checkinRows }] = await Promise.all([
-    supabase.from("area_weights").select("area_key, weight"),
-    supabase
-      .from("daily_checkins")
-      .select("date, mood, checkin_hours ( area_key, hours )")
-      .gte("date", ymdLocal(since))
-      .order("date"),
-  ]);
+  const thisWeek = currentWeekKey(today);
+  const prevWeek = previousWeekKey(today);
+
+  const [{ data: weightRows }, { data: checkinRows }, { data: reviewRow }, { data: reactionRows }] =
+    await Promise.all([
+      supabase.from("area_weights").select("area_key, weight"),
+      supabase
+        .from("daily_checkins")
+        .select("date, mood, checkin_hours ( area_key, hours )")
+        .gte("date", ymdLocal(since))
+        .order("date"),
+      supabase
+        .from("weekly_reviews")
+        .select("area_scores")
+        .eq("iso_week", prevWeek)
+        .maybeSingle(),
+      supabase
+        .from("suggestions")
+        .select("area_key, rule_key, status")
+        .eq("iso_week", thisWeek),
+    ]);
 
   const weights: Partial<Record<AreaKey, number>> = {};
   for (const row of weightRows ?? []) {
@@ -87,6 +103,48 @@ export default async function DashboardPage() {
   const hasData = entries.length > 0;
   const wheelHasData = fulfillment.some((row) => row.hours > 0);
 
+  // Insight: 2 tuần đã kết thúc gần nhất CÓ dữ liệu (tuần trống bỏ, đúng thiết kế rule)
+  const prevPrevMonday = mondayOf(today);
+  prevPrevMonday.setDate(prevPrevMonday.getDate() - 14);
+  const prevPrevWeek = isoWeekKey(prevPrevMonday);
+  const toInsightWeek = (isoWeek: string): InsightWeek | null => {
+    const slot = weeks.find((w) => w.isoWeek === isoWeek);
+    if (!slot?.hoursByArea) return null;
+    const rows = computeFulfillment(weights, slot.hoursByArea, AREA_KEYS);
+    const week: InsightWeek = {
+      isoWeek,
+      fulfillment: {},
+      actualShare: {},
+      expectedShare: {},
+    };
+    for (const row of rows) {
+      week.fulfillment[row.areaKey] = row.fulfillment;
+      week.actualShare[row.areaKey] = row.actualShare;
+      week.expectedShare[row.areaKey] = row.expectedShare;
+    }
+    return week;
+  };
+  // Tuần kết thúc gần nhất không có dữ liệu → không gợi ý (tránh khuyên từ số liệu cũ)
+  const lastInsightWeek = toInsightWeek(prevWeek);
+  const insightWeeks = lastInsightWeek
+    ? [toInsightWeek(prevPrevWeek), lastInsightWeek].filter((w) => w !== null)
+    : [];
+  const areaNames = Object.fromEntries(
+    LIFE_AREAS.map((area) => [area.key, area.name])
+  ) as Record<AreaKey, string>;
+  const suggestions = computeSuggestions({
+    weeks: insightWeeks,
+    reviewScores: (reviewRow?.area_scores ?? undefined) as
+      | Partial<Record<AreaKey, number>>
+      | undefined,
+    areaNames,
+    areaKeys: AREA_KEYS,
+  });
+  const statuses: Partial<Record<string, SuggestionStatus>> = {};
+  for (const row of reactionRows ?? []) {
+    statuses[`${row.area_key}:${row.rule_key}`] = row.status as SuggestionStatus;
+  }
+
   return (
     <>
       <AppNav />
@@ -97,6 +155,8 @@ export default async function DashboardPage() {
         <Suspense fallback={null}>
           <ReviewBanner />
         </Suspense>
+
+        <InsightPanel suggestions={suggestions} statuses={statuses} />
 
         {hasData ? (
           <>

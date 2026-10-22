@@ -1,6 +1,6 @@
 ---
 title: "Phase 3: Insight Engine & Polish"
-status: todo
+status: in-progress
 ---
 
 # Phase 3: Insight Engine & Polish (Sprint 3, 2 tuần)
@@ -47,11 +47,11 @@ Priority P1. Lớp khác biệt hóa của sản phẩm: chẩn đoán rule-base
 
 ## Todo
 
-- [ ] Migration suggestions
-- [ ] 3 rules + unit tests pass (fixture 3 tuần)
-- [ ] Insight panel + Nhận/Bỏ qua
-- [ ] Polish: loading/empty/error states, dark mode
-- [ ] Chạy gate 2 tuần + log đánh giá gợi ý hằng tuần
+- [x] Migration suggestions (đã chạy trên Supabase 2026-10-22; chỉ ghi khi Nhận/Bỏ qua, không ghi proposed lúc render)
+- [x] 3 rules + unit tests pass (8 test, fixture 2 tuần + review)
+- [x] Insight panel + Nhận/Bỏ qua (ẩn khi tuần trước không có dữ liệu)
+- [x] Polish: dark mode + empty states (trong đợt nâng cấp UI "Mindful Lavender" 2026-10-22)
+- [ ] Chạy gate 2 tuần + log đánh giá gợi ý hằng tuần (bắt đầu khi dùng thật)
 
 ## Success Criteria
 

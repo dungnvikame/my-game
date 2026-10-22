@@ -34,8 +34,8 @@ Quyết định đã khóa:
 | # | Phase | Status |
 |---|-------|--------|
 | 1 | [Nền tảng: Auth, Life Areas, Daily Check-in](./phase-01-start.md) | Done |
-| 2 | [Dashboard & Weekly Review](./phase-02-dashboard-weekly-review.md) | In Progress |
-| 3 | [Insight Engine & Polish](./phase-03-insight-engine-polish.md) | Pending |
+| 2 | [Dashboard & Weekly Review](./phase-02-dashboard-weekly-review.md) | Done |
+| 3 | [Insight Engine & Polish](./phase-03-insight-engine-polish.md) | In Progress (gate 2 tuần dùng thật) |
 
 ## Success Criteria
 

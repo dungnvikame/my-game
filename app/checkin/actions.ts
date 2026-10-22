@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { LIFE_AREAS } from "@/lib/areas";
+import { todayYMD, ymdLocal } from "@/lib/balance/today";
 
 export async function saveCheckin(formData: FormData) {
   const supabase = await createClient();
@@ -14,6 +15,12 @@ export async function saveCheckin(formData: FormData) {
 
   const date = String(formData.get("date") ?? "");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("Ngày không hợp lệ");
+  // Cùng cửa sổ với UI: không tương lai, tối đa 30 ngày trước
+  const today = todayYMD();
+  const min = new Date(`${today}T00:00:00`);
+  min.setDate(min.getDate() - 30);
+  if (date > today || date < ymdLocal(min))
+    throw new Error("Chỉ check-in được hôm nay hoặc 30 ngày gần nhất");
 
   const moodRaw = Number(formData.get("mood"));
   const mood = Number.isInteger(moodRaw) && moodRaw >= 1 && moodRaw <= 5 ? moodRaw : 3;
@@ -38,5 +45,5 @@ export async function saveCheckin(formData: FormData) {
   if (hoursError) throw new Error(`Không lưu được số giờ: ${hoursError.message}`);
 
   revalidatePath("/checkin");
-  redirect("/checkin?saved=1");
+  redirect(date === today ? "/checkin?saved=1" : `/checkin?date=${date}&saved=1`);
 }

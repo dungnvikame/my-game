@@ -56,6 +56,41 @@ export async function addActivity(formData: FormData) {
   revalidatePath("/checkin");
 }
 
+/** Tích/bỏ tích một hoạt động tiêu chuẩn cho một ngày. */
+export async function toggleRoutine(routineId: string, date: string, done: boolean) {
+  const { supabase, user } = await requireUser();
+  if (!/^[0-9a-f-]{36}$/.test(routineId)) throw new Error("Không hợp lệ");
+  if (!isValidCheckinDate(date, todayYMD())) throw new Error("Ngày không hợp lệ");
+
+  // Xóa trước để không tạo trùng khi tap nhanh nhiều lần
+  const { error: deleteError } = await supabase
+    .from("activities")
+    .delete()
+    .eq("routine_id", routineId)
+    .eq("date", date);
+  if (deleteError) throw new Error(`Không cập nhật được: ${deleteError.message}`);
+
+  if (done) {
+    const { data: routine, error: routineError } = await supabase
+      .from("routines")
+      .select("area_key, label, minutes")
+      .eq("id", routineId)
+      .single();
+    if (routineError || !routine) throw new Error("Không tìm thấy hoạt động tiêu chuẩn");
+
+    const { error } = await supabase.from("activities").insert({
+      user_id: user.id,
+      date,
+      area_key: routine.area_key,
+      minutes: routine.minutes,
+      note: routine.label,
+      routine_id: routineId,
+    });
+    if (error) throw new Error(`Không tích được: ${error.message}`);
+  }
+  revalidatePath("/checkin");
+}
+
 /** Xóa một hoạt động vừa ghi (nhầm tay) — RLS đảm bảo chỉ xóa của chính mình. */
 export async function deleteActivity(formData: FormData) {
   const { supabase } = await requireUser();

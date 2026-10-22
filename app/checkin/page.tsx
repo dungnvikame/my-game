@@ -1,25 +1,20 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { Flame, X } from "lucide-react";
+import { Flame, ListChecks, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { LIFE_AREAS, type AreaKey } from "@/lib/areas";
 import { todayYMD, ymdLocal } from "@/lib/balance/today";
 import { resolveCheckinDate } from "@/lib/balance/checkin-window";
 import { checkinStreak } from "@/lib/balance/streak";
+import { formatMinutes } from "@/lib/balance/format";
 import { AppNav } from "@/components/app-nav";
 import { ReviewBanner } from "@/components/review/review-banner";
 import { MoodPicker } from "./mood-picker";
 import { ActivityForm } from "./activity-form";
+import { RoutineChecklist, type ChecklistItem } from "./routine-checklist";
 import { deleteActivity } from "./actions";
 
 export const instant = false; // đọc cookies/session mỗi request, không prerender
-
-function formatMinutes(minutes: number): string {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (h === 0) return `${m}p`;
-  return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, "0")}`;
-}
 
 export default async function CheckinPage({
   searchParams,
@@ -35,20 +30,36 @@ export default async function CheckinPage({
   const streakSince = new Date(`${today}T00:00:00`);
   streakSince.setDate(streakSince.getDate() - 60);
 
-  const [{ data: checkin }, { data: activities }, { data: activityDates }, { data: moodDates }] =
-    await Promise.all([
-      supabase.from("daily_checkins").select("mood").eq("date", date).maybeSingle(),
-      supabase
-        .from("activities")
-        .select("id, area_key, minutes, note, created_at")
-        .eq("date", date)
-        .order("created_at"),
-      supabase.from("activities").select("date").gte("date", ymdLocal(streakSince)),
-      supabase.from("daily_checkins").select("date").gte("date", ymdLocal(streakSince)),
-    ]);
+  const [
+    { data: checkin },
+    { data: activities },
+    { data: routines },
+    { data: activityDates },
+    { data: moodDates },
+  ] = await Promise.all([
+    supabase.from("daily_checkins").select("mood").eq("date", date).maybeSingle(),
+    supabase
+      .from("activities")
+      .select("id, area_key, minutes, note, routine_id, created_at")
+      .eq("date", date)
+      .order("created_at"),
+    supabase.from("routines").select("id, area_key, label, minutes").order("created_at"),
+    supabase.from("activities").select("date").gte("date", ymdLocal(streakSince)),
+    supabase.from("daily_checkins").select("date").gte("date", ymdLocal(streakSince)),
+  ]);
 
   const nameByKey = new Map(LIFE_AREAS.map((area) => [area.key, area.name]));
   const entries = activities ?? [];
+  const tickedRoutineIds = new Set(
+    entries.map((a) => a.routine_id).filter((id) => id !== null)
+  );
+  const checklistItems: ChecklistItem[] = (routines ?? []).map((r) => ({
+    id: r.id,
+    label: r.label,
+    areaName: nameByKey.get(r.area_key as AreaKey) ?? r.area_key,
+    durationLabel: formatMinutes(r.minutes),
+    done: tickedRoutineIds.has(r.id),
+  }));
   const totalMinutes = entries.reduce((sum, a) => sum + a.minutes, 0);
   const touchedAreas = new Set(entries.map((a) => a.area_key as AreaKey));
   const untouched = LIFE_AREAS.filter((area) => !touchedAreas.has(area.key));
@@ -100,6 +111,24 @@ export default async function CheckinPage({
 
         <div className="mt-5 flex flex-col gap-4">
           <MoodPicker date={date} initial={checkin?.mood ?? null} />
+
+          {checklistItems.length > 0 ? (
+            <RoutineChecklist date={date} items={checklistItems} />
+          ) : (
+            <Link
+              href="/routines"
+              className="flex items-center gap-3 rounded-2xl border border-dashed border-border bg-surface p-4 text-sm leading-relaxed text-muted transition-colors duration-150 active:bg-surface-2"
+            >
+              <ListChecks size={22} className="shrink-0 text-primary" aria-hidden />
+              <span>
+                <span className="font-semibold text-foreground">
+                  Tạo ngày tiêu chuẩn của bạn
+                </span>{" "}
+                — những việc làm gần như mỗi ngày, check-in chỉ cần tích ✓.
+              </span>
+            </Link>
+          )}
+
           <ActivityForm date={date} />
 
           <section className="rounded-2xl border border-border bg-surface p-4 shadow-sm">

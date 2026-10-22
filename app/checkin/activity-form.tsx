@@ -46,7 +46,10 @@ export function ActivityForm({ date }: { date: string }) {
       <input type="hidden" name="area_key" value={area ?? ""} />
       <input type="hidden" name="minutes" value={minutes} />
 
-      <span className="text-sm font-semibold">Vừa dành thời gian cho…</span>
+      <span className="text-sm font-semibold">
+        Hoạt động khác{" "}
+        <span className="font-normal text-faint">— ngoài ngày tiêu chuẩn</span>
+      </span>
       <div className="grid grid-cols-4 gap-1.5">
         {LIFE_AREAS.map((item) => (
           <TapChip

@@ -1,38 +1,111 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens — "Mindful Lavender" (wellness/habit app):
+ * lavender tĩnh làm primary, nền ấm, dark mode desaturated (không đảo màu thô).
+ * Mọi component dùng token ngữ nghĩa, không hardcode hex.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  --background: #faf9fc;
+  --surface: #ffffff;
+  --surface-2: #f2f0f7;
+  --border: #e7e4ef;
+  --foreground: #211e2e;
+  --muted: #67627a;
+  --faint: #9c97ad;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --primary: #7c3aed;
+  --primary-strong: #6d28d9;
+  --primary-fg: #ffffff;
+  --primary-soft: #f3edfd;
+  --primary-ink: #5b21b6;
 
-/* Token màu cho chart — 1 accent + grid/text mờ, hoạt động cả 2 theme */
-:root {
-  --chart-accent: #4f46e5;
+  --success-soft: #e7f6ef;
+  --success-ink: #066e4f;
+  --warn-soft: #fdf3df;
+  --warn-ink: #8a5a06;
+  --danger: #dc2626;
+
+  /* Token màu cho chart — 1 accent + grid/text mờ */
+  --chart-accent: #7c3aed;
   --chart-mood: #0d9488;
-  --chart-grid: rgba(115, 115, 115, 0.25);
-  --chart-text: #737373;
+  --chart-grid: rgba(109, 106, 128, 0.2);
+  --chart-text: #67627a;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --chart-accent: #818cf8;
+    --background: #0f0d16;
+    --surface: #17141f;
+    --surface-2: #221e2e;
+    --border: #2b2739;
+    --foreground: #eae7f3;
+    --muted: #a39fb6;
+    --faint: #6f6a82;
+
+    --primary: #8b5cf6;
+    --primary-strong: #7c3aed;
+    --primary-fg: #ffffff;
+    --primary-soft: #2a2140;
+    --primary-ink: #c4b5fd;
+
+    --success-soft: #11291f;
+    --success-ink: #6ee7b7;
+    --warn-soft: #2d2410;
+    --warn-ink: #fbbf24;
+    --danger: #f87171;
+
+    --chart-accent: #a78bfa;
     --chart-mood: #2dd4bf;
-    --chart-grid: rgba(163, 163, 163, 0.35);
-    --chart-text: #a3a3a3;
+    --chart-grid: rgba(163, 159, 182, 0.25);
+    --chart-text: #a39fb6;
   }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-primary: var(--primary);
+  --color-primary-strong: var(--primary-strong);
+  --color-primary-fg: var(--primary-fg);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-ink: var(--primary-ink);
+  --color-success-soft: var(--success-soft);
+  --color-success-ink: var(--success-ink);
+  --color-warn-soft: var(--warn-soft);
+  --color-warn-ink: var(--warn-ink);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-be-vietnam), ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+}
+
+/* Slider check-in: track mảnh + thumb tròn to (touch target), theo primary */
+input[type="range"] {
+  accent-color: var(--primary);
+  height: 28px;
+}
+
+/* Focus ring thống nhất cho điều hướng bàn phím */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

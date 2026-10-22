@@ -11,6 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { LIFE_AREAS, type AreaKey } from "@/lib/areas";
+import { TapChip } from "@/components/tap-chip";
 
 export interface TrendWeek {
   isoWeek: string; // "2026-W43"
@@ -37,23 +38,20 @@ export function AreaTrend({ weeks }: { weeks: TrendWeek[] }) {
       {/* Chọn mảng bằng tap — giữ pattern chip của onboarding */}
       <div className="flex flex-wrap gap-1.5">
         {LIFE_AREAS.map((item) => (
-          <button
+          <TapChip
             key={item.key}
-            type="button"
-            aria-pressed={area === item.key}
+            selected={area === item.key}
             onClick={() => setArea(item.key)}
-            className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
-              area === item.key
-                ? "bg-neutral-900 text-white"
-                : "bg-neutral-100 text-neutral-600 active:bg-neutral-200"
-            }`}
+            className="px-3 text-xs"
           >
             {item.name}
-          </button>
+          </TapChip>
         ))}
       </div>
 
-      <p className="mt-4 text-xs font-medium text-neutral-400">Giờ / tuần</p>
+      <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-faint">
+        Giờ / tuần
+      </p>
       <div className="mt-1 h-40">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 4, right: 8, left: -24, bottom: 0 }}>
@@ -75,7 +73,9 @@ export function AreaTrend({ weeks }: { weeks: TrendWeek[] }) {
         </ResponsiveContainer>
       </div>
 
-      <p className="mt-3 text-xs font-medium text-neutral-400">Mood trung bình (1-5)</p>
+      <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-faint">
+        Mood trung bình (1-5)
+      </p>
       <div className="mt-1 h-24">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 4, right: 8, left: -24, bottom: 0 }}>

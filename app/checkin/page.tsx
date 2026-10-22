@@ -31,12 +31,12 @@ export default async function CheckinPage({
   return (
     <>
       <AppNav />
-      <main className="mx-auto max-w-md px-4 py-6">
+      <main className="mx-auto max-w-md px-4 pb-24 pt-6">
         <div className="flex items-baseline justify-between">
-          <h1 className="text-xl font-bold">Hôm nay của bạn</h1>
-          <span className="text-sm text-neutral-400">{date}</span>
+          <h1 className="text-2xl font-bold tracking-tight">Hôm nay của bạn</h1>
+          <span className="text-sm tabular-nums text-faint">{date}</span>
         </div>
-        <p className="mt-1 text-sm text-neutral-500">
+        <p className="mt-1.5 text-sm leading-relaxed text-muted">
           Kéo nhanh số giờ cho mảng có hoạt động — bỏ qua mảng không có.
         </p>
 
@@ -45,7 +45,7 @@ export default async function CheckinPage({
         </Suspense>
 
           {saved && (
-          <p className="mt-4 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          <p className="mt-4 rounded-xl bg-success-soft px-4 py-3 text-sm text-success-ink">
             Đã lưu check-in hôm nay. Sửa lại bên dưới nếu cần.
           </p>
         )}

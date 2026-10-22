@@ -42,20 +42,20 @@ export function BalanceWheel({ data }: { data: WheelDatum[] }) {
       </div>
 
       {/* Bảng giờ thô + % — nguồn đọc chính trên mobile, radar là tổng quan */}
-      <ul className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+      <ul className="mt-2 grid grid-cols-2 gap-x-5 gap-y-2 text-sm">
         {data.map((row) => (
           <li key={row.name} className="flex items-baseline justify-between gap-2">
-            <span className="truncate text-neutral-500">{row.name}</span>
-            <span className="shrink-0 tabular-nums">
+            <span className="truncate text-muted">{row.name}</span>
+            <span className="shrink-0 font-medium tabular-nums">
               {row.hours.toFixed(1)}h
-              <span className="ml-1.5 text-xs text-neutral-400">
+              <span className="ml-1.5 text-xs font-normal text-faint">
                 {Math.round(row.pct)}%
               </span>
             </span>
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-xs text-neutral-400">
+      <p className="mt-3 border-t border-border pt-3 text-xs leading-relaxed text-faint">
         % = giờ thực tế so với mức &ldquo;đủ&rdquo; suy từ trọng số (100% là đủ, trần 150%).
       </p>
     </div>

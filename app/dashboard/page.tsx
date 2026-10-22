@@ -90,9 +90,9 @@ export default async function DashboardPage() {
   return (
     <>
       <AppNav />
-      <main className="mx-auto max-w-md px-4 py-6">
-        <h1 className="text-xl font-bold">Bánh xe cân bằng</h1>
-        <p className="mt-1 text-sm text-neutral-500">7 ngày gần nhất</p>
+      <main className="mx-auto max-w-md px-4 pb-24 pt-6">
+        <h1 className="text-2xl font-bold tracking-tight">Bánh xe cân bằng</h1>
+        <p className="mt-1 text-sm text-muted">7 ngày gần nhất</p>
 
         <Suspense fallback={null}>
           <ReviewBanner />
@@ -101,27 +101,35 @@ export default async function DashboardPage() {
         {hasData ? (
           <>
             {wheelHasData ? (
-              <div className="mt-4">
+              <div className="mt-4 rounded-2xl border border-border bg-surface p-4 shadow-sm">
                 <BalanceWheel data={wheelData} />
               </div>
             ) : (
-              <p className="mt-4 rounded-lg bg-neutral-100 px-4 py-6 text-center text-sm text-neutral-500">
+              <p className="mt-4 rounded-2xl bg-surface-2 px-4 py-8 text-center text-sm leading-relaxed text-muted">
                 7 ngày gần nhất chưa có check-in — bánh xe sẽ hiện lại sau{" "}
-                <Link href="/checkin" className="font-medium underline underline-offset-2">
+                <Link
+                  href="/checkin"
+                  className="font-medium text-primary-ink underline underline-offset-4"
+                >
                   check-in tiếp theo
                 </Link>
                 .
               </p>
             )}
 
-            <h2 className="mt-8 text-lg font-bold">Trend theo tuần</h2>
-            <p className="mb-3 mt-1 text-sm text-neutral-500">8 tuần gần nhất</p>
-            <AreaTrend weeks={weeks} />
+            <h2 className="mt-8 text-lg font-bold tracking-tight">Trend theo tuần</h2>
+            <p className="mb-3 mt-1 text-sm text-muted">8 tuần gần nhất</p>
+            <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
+              <AreaTrend weeks={weeks} />
+            </div>
           </>
         ) : (
-          <p className="mt-6 rounded-lg bg-neutral-100 px-4 py-6 text-center text-sm text-neutral-500">
+          <p className="mt-6 rounded-2xl bg-surface-2 px-4 py-10 text-center text-sm leading-relaxed text-muted">
             Chưa có dữ liệu. Bắt đầu bằng một{" "}
-            <Link href="/checkin" className="font-medium underline underline-offset-2">
+            <Link
+              href="/checkin"
+              className="font-medium text-primary-ink underline underline-offset-4"
+            >
               check-in hôm nay
             </Link>{" "}
             — bánh xe sẽ hiện sau check-in đầu tiên.

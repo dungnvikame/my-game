@@ -28,7 +28,7 @@ export async function ReviewBanner() {
   return (
     <Link
       href="/review"
-      className="mt-4 block rounded-lg bg-indigo-50 px-4 py-3 text-sm text-indigo-800 active:bg-indigo-100"
+      className="mt-4 block rounded-xl bg-primary-soft px-4 py-3 text-sm font-medium text-primary-ink transition-transform duration-150 active:scale-[0.99]"
     >
       Đến giờ weekly review — 5 phút nhìn lại tuần của bạn →
     </Link>

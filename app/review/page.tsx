@@ -58,23 +58,23 @@ export default async function ReviewPage({
   return (
     <>
       <AppNav />
-      <main className="mx-auto max-w-md px-4 py-6">
-        <h1 className="text-xl font-bold">Weekly review</h1>
-        <p className="mt-1 text-sm text-neutral-500">
+      <main className="mx-auto max-w-md px-4 pb-24 pt-6">
+        <h1 className="text-2xl font-bold tracking-tight">Weekly review</h1>
+        <p className="mt-1.5 text-sm leading-relaxed text-muted">
           Tuần {targetWeek.replace("-W", " — W")}
           {isMakeup && " (làm bù tuần trước)"} · chấm 1-10 theo cảm nhận, đặt cạnh
           giờ thực tế.
         </p>
 
         {reviewsError && (
-          <p className="mt-4 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <p className="mt-4 rounded-xl bg-warn-soft px-4 py-3 text-sm text-warn-ink">
             Chưa đọc được weekly review — có thể migration
             `002-weekly-reviews.sql` chưa chạy trên Supabase.
           </p>
         )}
 
         {savedWeek && (
-          <p className="mt-4 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          <p className="mt-4 rounded-xl bg-success-soft px-4 py-3 text-sm text-success-ink">
             Đã lưu review tuần {savedWeek}.
             {savedWeek !== targetWeek &&
               ` Form bên dưới đã chuyển sang tuần ${targetWeek}.`}
@@ -82,19 +82,21 @@ export default async function ReviewPage({
         )}
 
         {/* key=targetWeek: đổi tuần là remount, tránh giữ điểm tuần cũ trong state */}
-        <form key={targetWeek} action={saveReview} className="mt-6 flex flex-col gap-5">
+        <form key={targetWeek} action={saveReview} className="mt-5 flex flex-col gap-4">
           <input type="hidden" name="iso_week" value={targetWeek} />
-          {LIFE_AREAS.map((area) => (
-            <ScoreRow
-              key={area.key}
-              area={area}
-              hours={hoursByArea[area.key] ?? 0}
-              initial={existingScores[area.key] ?? 5}
-            />
-          ))}
+          <div className="flex flex-col gap-5 rounded-2xl border border-border bg-surface p-4 shadow-sm">
+            {LIFE_AREAS.map((area) => (
+              <ScoreRow
+                key={area.key}
+                area={area}
+                hours={hoursByArea[area.key] ?? 0}
+                initial={existingScores[area.key] ?? 5}
+              />
+            ))}
+          </div>
 
-          <div>
-            <label className="text-sm font-medium" htmlFor="note">
+          <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
+            <label className="text-sm font-semibold" htmlFor="note">
               Ghi chú (tùy chọn)
             </label>
             <textarea
@@ -103,13 +105,13 @@ export default async function ReviewPage({
               rows={3}
               defaultValue={existing?.note ?? ""}
               placeholder="Một điều đáng nhớ, một điều muốn đổi tuần tới…"
-              className="mt-2 w-full rounded-lg border border-neutral-300 px-3 py-3 text-base outline-none focus:border-neutral-900"
+              className="mt-2 w-full rounded-xl border border-border bg-surface px-3.5 py-3 text-base transition-colors duration-150 placeholder:text-faint focus:border-primary focus:outline-none"
             />
           </div>
 
           <button
             type="submit"
-            className="rounded-lg bg-neutral-900 px-4 py-3 font-medium text-white"
+            className="h-12 cursor-pointer rounded-xl bg-primary font-semibold text-primary-fg shadow-sm transition-[background-color,transform] duration-150 hover:bg-primary-strong active:scale-[0.98]"
           >
             {existing ? "Cập nhật review" : "Lưu review"}
           </button>
@@ -117,22 +119,29 @@ export default async function ReviewPage({
 
         {pastReviews.length > 0 && (
           <section className="mt-10">
-            <h2 className="text-lg font-bold">Các tuần trước</h2>
+            <h2 className="text-lg font-bold tracking-tight">Các tuần trước</h2>
             <ul className="mt-3 flex flex-col gap-3">
               {pastReviews.map((row) => {
                 const scores = (row.area_scores ?? {}) as Partial<
                   Record<AreaKey, number>
                 >;
                 return (
-                  <li key={row.iso_week} className="rounded-lg bg-neutral-100 px-4 py-3">
-                    <p className="text-sm font-medium">{row.iso_week}</p>
-                    <p className="mt-1 text-xs text-neutral-500">
+                  <li
+                    key={row.iso_week}
+                    className="rounded-2xl border border-border bg-surface px-4 py-3.5 shadow-sm"
+                  >
+                    <p className="text-sm font-semibold text-primary-ink">
+                      {row.iso_week}
+                    </p>
+                    <p className="mt-1.5 text-xs leading-relaxed text-muted">
                       {LIFE_AREAS.map(
                         (area) => `${nameByKey.get(area.key)} ${scores[area.key] ?? "–"}`
                       ).join(" · ")}
                     </p>
                     {row.note && (
-                      <p className="mt-1.5 text-sm text-neutral-600">{row.note}</p>
+                      <p className="mt-2 border-t border-border pt-2 text-sm leading-relaxed">
+                        {row.note}
+                      </p>
                     )}
                   </li>
                 );

@@ -17,23 +17,27 @@ export default async function OnboardingPage() {
 
   return (
     <main className="mx-auto max-w-md px-4 py-8">
-      <h1 className="text-xl font-bold">Giai đoạn này, điều gì quan trọng với bạn?</h1>
-      <p className="mt-1 text-sm text-neutral-500">
+      <h1 className="text-2xl font-bold tracking-tight">
+        Giai đoạn này, điều gì quan trọng với bạn?
+      </h1>
+      <p className="mt-2 text-sm leading-relaxed text-muted">
         Chấm mức ưu tiên 1–5 cho từng mảng. Đây là chuẩn để app đo độ cân bằng —
         sửa lại được bất cứ lúc nào.
       </p>
 
-      <form action={saveWeights} className="mt-6 flex flex-col gap-5">
-        {LIFE_AREAS.map((area) => (
-          <WeightRow
-            key={area.key}
-            area={area}
-            initial={current.get(area.key) ?? DEFAULT_WEIGHT}
-          />
-        ))}
+      <form action={saveWeights} className="mt-6 flex flex-col gap-4">
+        <div className="flex flex-col gap-5 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+          {LIFE_AREAS.map((area) => (
+            <WeightRow
+              key={area.key}
+              area={area}
+              initial={current.get(area.key) ?? DEFAULT_WEIGHT}
+            />
+          ))}
+        </div>
         <button
           type="submit"
-          className="mt-2 rounded-lg bg-neutral-900 px-4 py-3 font-medium text-white"
+          className="h-12 cursor-pointer rounded-xl bg-primary font-semibold text-primary-fg shadow-sm transition-[background-color,transform] duration-150 hover:bg-primary-strong active:scale-[0.98]"
         >
           Bắt đầu
         </button>

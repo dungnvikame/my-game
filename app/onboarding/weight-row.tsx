@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { LifeArea } from "@/lib/areas";
+import { TapChip } from "@/components/tap-chip";
 
 // Một hàng chọn trọng số 1-5 bằng tap, không gõ.
 export function WeightRow({ area, initial }: { area: LifeArea; initial: number }) {
@@ -9,27 +10,21 @@ export function WeightRow({ area, initial }: { area: LifeArea; initial: number }
 
   return (
     <div>
-      <div className="flex items-baseline justify-between">
+      <div className="flex items-baseline justify-between gap-3">
         <span className="font-medium">{area.name}</span>
-        <span className="text-xs text-neutral-400">{area.hint}</span>
+        <span className="text-xs text-faint">{area.hint}</span>
       </div>
       <input type="hidden" name={`weight_${area.key}`} value={value} />
       <div className="mt-2 grid grid-cols-5 gap-1.5">
         {[1, 2, 3, 4, 5].map((level) => (
-          <button
+          <TapChip
             key={level}
-            type="button"
-            aria-label={`${area.name}: mức ${level}`}
-            aria-pressed={value === level}
+            selected={value === level}
             onClick={() => setValue(level)}
-            className={`rounded-md py-2.5 text-sm font-medium transition-colors ${
-              value === level
-                ? "bg-neutral-900 text-white"
-                : "bg-neutral-100 text-neutral-600 active:bg-neutral-200"
-            }`}
+            ariaLabel={`${area.name}: mức ${level}`}
           >
             {level}
-          </button>
+          </TapChip>
         ))}
       </div>
     </div>

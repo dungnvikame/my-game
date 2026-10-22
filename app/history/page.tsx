@@ -19,21 +19,21 @@ export default async function HistoryPage() {
   const since = new Date(`${today}T00:00:00`);
   since.setDate(since.getDate() - 60); // 60 ngày: đủ cho streak + danh sách
 
-  const { data: rows } = await supabase
-    .from("daily_checkins")
-    .select("date, mood, checkin_hours ( hours )")
-    .gte("date", ymdLocal(since))
-    .order("date", { ascending: false });
+  const [{ data: moodRows }, { data: activityRows }] = await Promise.all([
+    supabase.from("daily_checkins").select("date, mood").gte("date", ymdLocal(since)),
+    supabase.from("activities").select("date, minutes").gte("date", ymdLocal(since)),
+  ]);
 
-  const byDate = new Map(
-    (rows ?? []).map((row) => [
-      row.date,
-      {
-        mood: row.mood,
-        total: (row.checkin_hours ?? []).reduce((sum, h) => sum + Number(h.hours), 0),
-      },
-    ])
-  );
+  const byDate = new Map<string, { mood?: number; total: number; count: number }>();
+  for (const row of moodRows ?? []) {
+    byDate.set(row.date, { mood: row.mood, total: 0, count: 0 });
+  }
+  for (const row of activityRows ?? []) {
+    const day = byDate.get(row.date) ?? { total: 0, count: 0 };
+    day.total += row.minutes / 60;
+    day.count += 1;
+    byDate.set(row.date, day);
+  }
   const streak = checkinStreak(byDate.keys(), today);
 
   // 14 ngày gần nhất, cả ngày chưa check-in (để bấm vào làm bù)
@@ -90,13 +90,16 @@ export default async function HistoryPage() {
                     <span className="font-semibold tabular-nums">
                       {entry.total.toFixed(1)}h
                     </span>
-                    <span className="ml-2 text-muted">
-                      {MOOD_LABELS[entry.mood - 1]}
+                    <span className="ml-1.5 text-xs text-faint">
+                      · {entry.count} hoạt động
                     </span>
+                    {entry.mood !== undefined && (
+                      <span className="ml-2 text-muted">{MOOD_LABELS[entry.mood - 1]}</span>
+                    )}
                   </span>
                 ) : (
                   <span className="flex-1 text-sm text-faint">
-                    Chưa check-in — bấm để làm bù
+                    Chưa ghi gì — bấm để ghi bù
                   </span>
                 )}
                 <ChevronRight size={18} className="shrink-0 text-faint" aria-hidden />

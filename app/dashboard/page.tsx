@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { TriangleAlert } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_WEIGHT, LIFE_AREAS, type AreaKey } from "@/lib/areas";
 import {
@@ -35,24 +36,29 @@ export default async function DashboardPage() {
   const thisWeek = currentWeekKey(today);
   const prevWeek = previousWeekKey(today);
 
-  const [{ data: weightRows }, { data: checkinRows }, { data: reviewRow }, { data: reactionRows }] =
-    await Promise.all([
-      supabase.from("area_weights").select("area_key, weight"),
-      supabase
-        .from("daily_checkins")
-        .select("date, mood, checkin_hours ( area_key, hours )")
-        .gte("date", ymdLocal(since))
-        .order("date"),
-      supabase
-        .from("weekly_reviews")
-        .select("area_scores")
-        .eq("iso_week", prevWeek)
-        .maybeSingle(),
-      supabase
-        .from("suggestions")
-        .select("area_key, rule_key, status")
-        .eq("iso_week", thisWeek),
-    ]);
+  const [
+    { data: weightRows },
+    { data: activityRows },
+    { data: moodRows },
+    { data: reviewRow },
+    { data: reactionRows },
+  ] = await Promise.all([
+    supabase.from("area_weights").select("area_key, weight"),
+    supabase
+      .from("activities")
+      .select("date, area_key, minutes")
+      .gte("date", ymdLocal(since)),
+    supabase.from("daily_checkins").select("date, mood").gte("date", ymdLocal(since)),
+    supabase
+      .from("weekly_reviews")
+      .select("area_scores")
+      .eq("iso_week", prevWeek)
+      .maybeSingle(),
+    supabase
+      .from("suggestions")
+      .select("area_key, rule_key, status")
+      .eq("iso_week", thisWeek),
+  ]);
 
   const weights: Partial<Record<AreaKey, number>> = {};
   for (const row of weightRows ?? []) {
@@ -60,13 +66,21 @@ export default async function DashboardPage() {
   }
   for (const key of AREA_KEYS) weights[key] ??= DEFAULT_WEIGHT;
 
-  const entries: DayEntry[] = (checkinRows ?? []).map((row) => {
-    const hoursByArea: Partial<Record<AreaKey, number>> = {};
-    for (const h of row.checkin_hours ?? []) {
-      hoursByArea[h.area_key as AreaKey] = Number(h.hours);
-    }
-    return { date: row.date, mood: row.mood, hoursByArea };
-  });
+  // Giờ/mảng/ngày suy ra từ hoạt động đã ghi (bằng chứng), mood từ daily_checkins
+  const hoursByDate = new Map<string, Partial<Record<AreaKey, number>>>();
+  for (const row of activityRows ?? []) {
+    const areaKey = row.area_key as AreaKey;
+    const day = hoursByDate.get(row.date) ?? {};
+    day[areaKey] = (day[areaKey] ?? 0) + row.minutes / 60;
+    hoursByDate.set(row.date, day);
+  }
+  const moodByDate = new Map((moodRows ?? []).map((row) => [row.date, row.mood]));
+  const allDates = new Set([...hoursByDate.keys(), ...moodByDate.keys()]);
+  const entries: DayEntry[] = [...allDates].sort().map((date) => ({
+    date,
+    mood: moodByDate.get(date),
+    hoursByArea: hoursByDate.get(date) ?? {},
+  }));
 
   // Wheel: tổng giờ 7 ngày gần nhất
   const last7Str = ymdLocal(last7);
@@ -96,12 +110,30 @@ export default async function DashboardPage() {
     const key = isoWeekKey(monday);
     const agg = aggregates.get(key);
     return agg
-      ? { isoWeek: key, hoursByArea: agg.totalHoursByArea, avgMood: agg.avgMood }
+      ? {
+          isoWeek: key,
+          hoursByArea: agg.totalHoursByArea,
+          avgMood: agg.moodDays > 0 ? agg.avgMood : null,
+        }
       : { isoWeek: key, hoursByArea: null, avgMood: null };
   });
 
   const hasData = entries.length > 0;
   const wheelHasData = fulfillment.some((row) => row.hours > 0);
+
+  // Chỉ mặt "mất cân bằng" 7 ngày: mảng hụt sâu nhất + mảng đang nuốt thời gian
+  const shortfalls = fulfillment
+    .filter((row) => row.expectedShare > 0 && row.fulfillment < 0.5)
+    .sort((a, b) => a.fulfillment - b.fulfillment)
+    .slice(0, 2);
+  const overloads = fulfillment
+    .filter(
+      (row) => row.expectedShare > 0 && row.hours > 0 && row.actualShare > 2 * row.expectedShare
+    )
+    .sort(
+      (a, b) => b.actualShare / b.expectedShare - a.actualShare / a.expectedShare
+    )
+    .slice(0, 1);
 
   // Insight: 2 tuần đã kết thúc gần nhất CÓ dữ liệu (tuần trống bỏ, đúng thiết kế rule)
   const prevPrevMonday = mondayOf(today);
@@ -160,6 +192,30 @@ export default async function DashboardPage() {
 
         {hasData ? (
           <>
+            {wheelHasData && (shortfalls.length > 0 || overloads.length > 0) && (
+              <div className="mt-4 rounded-2xl bg-warn-soft p-4">
+                <p className="flex items-center gap-1.5 text-sm font-semibold text-warn-ink">
+                  <TriangleAlert size={16} aria-hidden /> Đang mất cân bằng (7 ngày)
+                </p>
+                <ul className="mt-1.5 flex flex-col gap-1 text-sm leading-relaxed text-warn-ink">
+                  {shortfalls.map((row) => (
+                    <li key={row.areaKey}>
+                      Hụt <strong>{nameByKey.get(row.areaKey)}</strong>: mới đạt{" "}
+                      {Math.round(row.fulfillment * 100)}% mức đủ (
+                      {row.hours.toFixed(1)}h).
+                    </li>
+                  ))}
+                  {overloads.map((row) => (
+                    <li key={row.areaKey}>
+                      <strong>{nameByKey.get(row.areaKey)}</strong> đang nuốt thời
+                      gian: chiếm {Math.round(row.actualShare * 100)}% tổng giờ,
+                      kỳ vọng {Math.round(row.expectedShare * 100)}%.
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {wheelHasData ? (
               <div className="mt-4 rounded-2xl border border-border bg-surface p-4 shadow-sm">
                 <BalanceWheel data={wheelData} />

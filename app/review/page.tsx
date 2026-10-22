@@ -31,21 +31,19 @@ export default async function ReviewPage({
     reviewedWeeks
   );
 
-  // Giờ thực tế của tuần mục tiêu — đặt cạnh điểm tự chấm
+  // Giờ thực tế của tuần mục tiêu (từ hoạt động đã ghi) — đặt cạnh điểm tự chấm
   const sunday = new Date(targetMonday);
   sunday.setDate(sunday.getDate() + 6);
-  const { data: checkinRows } = await supabase
-    .from("daily_checkins")
-    .select("date, checkin_hours ( area_key, hours )")
+  const { data: activityRows } = await supabase
+    .from("activities")
+    .select("area_key, minutes")
     .gte("date", ymdLocal(targetMonday))
     .lte("date", ymdLocal(sunday));
 
   const hoursByArea: Partial<Record<AreaKey, number>> = {};
-  for (const row of checkinRows ?? []) {
-    for (const h of row.checkin_hours ?? []) {
-      const key = h.area_key as AreaKey;
-      hoursByArea[key] = (hoursByArea[key] ?? 0) + Number(h.hours);
-    }
+  for (const row of activityRows ?? []) {
+    const key = row.area_key as AreaKey;
+    hoursByArea[key] = (hoursByArea[key] ?? 0) + row.minutes / 60;
   }
 
   const existing = (reviews ?? []).find((row) => row.iso_week === targetWeek);

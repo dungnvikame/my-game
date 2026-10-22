@@ -4,46 +4,65 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { LIFE_AREAS } from "@/lib/areas";
-import { todayYMD, ymdLocal } from "@/lib/balance/today";
+import { todayYMD } from "@/lib/balance/today";
+import { isValidCheckinDate } from "@/lib/balance/checkin-window";
 
-export async function saveCheckin(formData: FormData) {
+const AREA_KEYS = new Set(LIFE_AREAS.map((area) => area.key as string));
+
+async function requireUser() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+  return { supabase, user };
+}
+
+/** Lưu tâm trạng của một ngày — gọi ngay khi tap, không cần nút lưu. */
+export async function setMood(date: string, mood: number) {
+  const { supabase, user } = await requireUser();
+  if (!isValidCheckinDate(date, todayYMD())) throw new Error("Ngày không hợp lệ");
+  if (!Number.isInteger(mood) || mood < 1 || mood > 5)
+    throw new Error("Tâm trạng không hợp lệ");
+
+  const { error } = await supabase
+    .from("daily_checkins")
+    .upsert({ user_id: user.id, date, mood }, { onConflict: "user_id,date" });
+  if (error) throw new Error(`Không lưu được tâm trạng: ${error.message}`);
+  revalidatePath("/checkin");
+}
+
+/** Thêm một hoạt động — bằng chứng đã dành thời gian cho mảng nào đó. */
+export async function addActivity(formData: FormData) {
+  const { supabase, user } = await requireUser();
 
   const date = String(formData.get("date") ?? "");
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("Ngày không hợp lệ");
-  // Cùng cửa sổ với UI: không tương lai, tối đa 30 ngày trước
-  const today = todayYMD();
-  const min = new Date(`${today}T00:00:00`);
-  min.setDate(min.getDate() - 30);
-  if (date > today || date < ymdLocal(min))
-    throw new Error("Chỉ check-in được hôm nay hoặc 30 ngày gần nhất");
+  if (!isValidCheckinDate(date, todayYMD())) throw new Error("Ngày không hợp lệ");
 
-  const moodRaw = Number(formData.get("mood"));
-  const mood = Number.isInteger(moodRaw) && moodRaw >= 1 && moodRaw <= 5 ? moodRaw : 3;
+  const areaKey = String(formData.get("area_key") ?? "");
+  if (!AREA_KEYS.has(areaKey)) throw new Error("Chọn một mảng trước khi thêm");
 
-  const { data: checkin, error: checkinError } = await supabase
-    .from("daily_checkins")
-    .upsert({ user_id: user.id, date, mood }, { onConflict: "user_id,date" })
-    .select("id")
-    .single();
-  if (checkinError || !checkin)
-    throw new Error(`Không lưu được check-in: ${checkinError?.message}`);
+  const minutes = Number(formData.get("minutes"));
+  if (!Number.isInteger(minutes) || minutes <= 0 || minutes > 1440)
+    throw new Error("Thời lượng không hợp lệ");
 
-  const hours = LIFE_AREAS.map((area) => {
-    const raw = Number(formData.get(`hours_${area.key}`));
-    const value = Number.isFinite(raw) && raw >= 0 && raw <= 24 ? raw : 0;
-    return { checkin_id: checkin.id, area_key: area.key, hours: value };
-  });
+  const noteRaw = String(formData.get("note") ?? "").trim();
+  const note = noteRaw === "" ? null : noteRaw.slice(0, 200);
 
-  const { error: hoursError } = await supabase
-    .from("checkin_hours")
-    .upsert(hours, { onConflict: "checkin_id,area_key" });
-  if (hoursError) throw new Error(`Không lưu được số giờ: ${hoursError.message}`);
-
+  const { error } = await supabase
+    .from("activities")
+    .insert({ user_id: user.id, date, area_key: areaKey, minutes, note });
+  if (error) throw new Error(`Không thêm được hoạt động: ${error.message}`);
   revalidatePath("/checkin");
-  redirect(date === today ? "/checkin?saved=1" : `/checkin?date=${date}&saved=1`);
+}
+
+/** Xóa một hoạt động vừa ghi (nhầm tay) — RLS đảm bảo chỉ xóa của chính mình. */
+export async function deleteActivity(formData: FormData) {
+  const { supabase } = await requireUser();
+  const id = String(formData.get("id") ?? "");
+  if (!/^[0-9a-f-]{36}$/.test(id)) throw new Error("Hoạt động không hợp lệ");
+
+  const { error } = await supabase.from("activities").delete().eq("id", id);
+  if (error) throw new Error(`Không xóa được: ${error.message}`);
+  revalidatePath("/checkin");
 }

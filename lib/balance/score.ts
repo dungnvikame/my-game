@@ -60,13 +60,16 @@ export function mondayOf(date: Date): Date {
 
 export interface DayEntry {
   date: string; // YYYY-MM-DD
-  mood: number;
+  /** Có thể thiếu: ngày có hoạt động nhưng chưa chấm tâm trạng. */
+  mood?: number;
   hoursByArea: Partial<Record<AreaKey, number>>;
 }
 
 export interface WeekAggregate {
   isoWeek: string;
   days: number;
+  /** Số ngày có chấm tâm trạng — mẫu số của avgMood. */
+  moodDays: number;
   totalHoursByArea: Partial<Record<AreaKey, number>>;
   avgMood: number;
 }
@@ -78,11 +81,14 @@ export function aggregateByWeek(entries: DayEntry[]): WeekAggregate[] {
     const week = isoWeekKey(new Date(`${entry.date}T00:00:00`));
     let agg = byWeek.get(week);
     if (!agg) {
-      agg = { isoWeek: week, days: 0, totalHoursByArea: {}, avgMood: 0 };
+      agg = { isoWeek: week, days: 0, moodDays: 0, totalHoursByArea: {}, avgMood: 0 };
       byWeek.set(week, agg);
     }
-    // avgMood tích lũy dạng tổng, chia ở cuối
-    agg.avgMood += entry.mood;
+    // avgMood tích lũy dạng tổng, chia ở cuối theo số ngày có mood
+    if (entry.mood !== undefined) {
+      agg.avgMood += entry.mood;
+      agg.moodDays += 1;
+    }
     agg.days += 1;
     for (const [key, hours] of Object.entries(entry.hoursByArea)) {
       const areaKey = key as AreaKey;
@@ -90,6 +96,6 @@ export function aggregateByWeek(entries: DayEntry[]): WeekAggregate[] {
     }
   }
   return [...byWeek.values()]
-    .map((agg) => ({ ...agg, avgMood: agg.days > 0 ? agg.avgMood / agg.days : 0 }))
+    .map((agg) => ({ ...agg, avgMood: agg.moodDays > 0 ? agg.avgMood / agg.moodDays : 0 }))
     .sort((a, b) => a.isoWeek.localeCompare(b.isoWeek));
 }
